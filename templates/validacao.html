@@ -3,30 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FilterTrack - Filtragem de Documentos</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>FilterTrack - Seleção de Arquivos DBF</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>FilterTrack - Filtragem de Documentos</h1>
+    <h1>FilterTrack - Seleção de Arquivos DBF</h1>
 
-    <form method="POST">
-        <label for="data-inicial">Data Inicial:</label>
-        <input type="date" id="data-inicial" name="data_inicial" required>
+    <form id="form-validacao" method="POST" enctype="multipart/form-data">
+        <!-- Seleção do arquivo DBF de fornecedores -->
+        <label for="fornecedores-file">Selecione o arquivo de Fornecedores (.DBF):</label>
+        <input type="file" id="fornecedores-file" name="fornecedores_file" accept=".dbf" required>
 
-        <label for="data-final">Data Final:</label>
-        <input type="date" id="data-final" name="data_final" required>
+        <!-- Seleção do arquivo DBF de documentos fiscais -->
+        <label for="documentos-file">Selecione o arquivo de Documentos Fiscais (.DBF):</label>
+        <input type="file" id="documentos-file" name="documentos_file" accept=".dbf" required>
 
-        <label for="fornecedor">Nome do Fornecedor:</label>
-        <input type="text" id="fornecedor" name="fornecedor" placeholder="Digite o nome do fornecedor">
-
-        <label for="cnpj">CNPJ/Razão Social:</label>
-        <input type="text" id="cnpj" name="cnpj" placeholder="Digite o CNPJ ou Razão Social">
-
-        <button type="submit">Filtrar</button>
+        <button type="submit">Avançar</button>
     </form>
 
-    {% if resultado %}
-    <p>{{ resultado }}</p>
+    <p id="error-message" style="display: none;"></p>
+
+    <script>
+        // Validação de campos
+        document.getElementById('form-validacao').addEventListener('submit', function (e) {
+            const fornecedoresFile = document.getElementById('fornecedores-file').files;
+            const documentosFile = document.getElementById('documentos-file').files;
+
+            // Verifica se os arquivos .DBF foram selecionados
+            if (fornecedoresFile.length === 0 || documentosFile.length === 0) {
+                e.preventDefault();  // Previne o envio do formulário
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('error-message').innerText = 'Por favor, selecione os arquivos .DBF antes de continuar.';
+            }
+        });
+    </script>
+
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
     {% endif %}
 </body>
 </html>
