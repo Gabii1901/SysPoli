@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FilterTrack - Filtragem</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>FilterTrack - Filtragem de Documentos</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <h1>FilterTrack - Filtragem de Documentos</h1>
 
-    <form id="form-filtragem">
+    <form method="POST">
         <label for="data-inicial">Data Inicial:</label>
         <input type="date" id="data-inicial" name="data_inicial" required>
 
@@ -25,29 +25,38 @@
         <button type="submit">Filtrar</button>
     </form>
 
-    <div id="result"></div>
+    {% if documentos %}
+    <h2>Resultados Filtrados</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Chave</th>
+                <th>Data Emissão</th>
+                <th>CNPJ/CPF Documento</th>
+                <th>Nome Documento</th>
+                <th>Nome Fornecedor</th>
+                <th>CNPJ Fornecedor</th>
+                <th>CPF Fornecedor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in documentos %}
+            <tr>
+                <td>{{ doc.Chave }}</td>
+                <td>{{ doc.Dataemis }}</td>
+                <td>{{ doc.Cnpjcpf }}</
 
-    <script>
-        // Função para enviar o formulário via AJAX e exibir os resultados sem recarregar a página
-        document.getElementById('form-filtragem').addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-
-            fetch('/filtrar', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Exibe os resultados no div 'result'
-                const resultDiv = document.getElementById('result');
-                resultDiv.innerHTML = JSON.stringify(data, null, 2);
-            })
-            .catch(error => {
-                console.error('Erro ao buscar documentos:', error);
-            });
-        });
-    </script>
+td>
+                <td>{{ doc.NomeDocumento }}</td>
+                <td>{{ doc.FornecedorNome }}</td>
+                <td>{{ doc.FornecedorCnpj }}</td>
+                <td>{{ doc.FornecedorCpf }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nenhum documento encontrado.</p>
+    {% endif %}
 </body>
 </html>
