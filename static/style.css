@@ -34,21 +34,14 @@ label {
 }
 
 button {
-    background-color: #007bff;
+    background-color: #007BFF;
     color: white;
     border: none;
     cursor: pointer;
-    max-width: 150px;
 }
 
 button:hover {
     background-color: #0056b3;
-}
-
-p {
-    color: red;
-    font-weight: bold;
-    text-align: center;
 }
 
 table {
@@ -58,15 +51,26 @@ table {
 }
 
 th, td {
-    padding: 12px;
     border: 1px solid #ddd;
+    padding: 8px;
     text-align: left;
+    word-wrap: break-word
 }
 
 th {
+    background-color: #007BFF;
+    color: white;
+}
+
+tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
-tbody tr:nth-child(odd) {
-    background-color: #f9f9f9;
+tr:hover {
+    background-color: #ddd;
+}
+
+
+th:nth-child(2), td:nth-child(2) {
+    width: 200px;
 }
