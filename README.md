@@ -4,15 +4,8 @@ FilterTrack é uma plataforma de filtragem de documentos fiscais recebidos dos f
 
 ## Banco de Dados
 
-A aplicação lê dados diretamente das tabelas `FORNECEDORES.DBF` e `MANIFESTODOCUMENTOSFISCAIS.DBF` do sistema ERP.  
+A aplicação lê dados diretamente da `MANIFESTODOCUMENTOSFISCAIS.DBF` do sistema ERP.   
 Não há um banco de dados próprio; a aplicação apenas traz os dados dessas duas tabelas e permite a exportação para Excel.
-
-
-## Modelo de Contrato e Custos
-
-- **Implantação e Treinamento:** R$ 400,00
-- **Suporte Mensal:** R$ 250,00 (segunda a sexta)
-- **Manutenção e Suporte Adicional:** R$ 50/hora
   
 
 
