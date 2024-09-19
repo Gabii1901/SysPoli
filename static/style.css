@@ -51,9 +51,22 @@ p {
     text-align: center;
 }
 
-#result {
+table {
+    width: 100%;
+    border-collapse: collapse;
     margin-top: 20px;
-    font-size: 14px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
+}
+
+th, td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
 }
