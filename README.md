@@ -18,4 +18,4 @@ Não há um banco de dados próprio; a aplicação apenas traz os dados dessas d
 
 ## Contato
 
-Para mais informações, entre em contato através de [seu-email@exemplo.com](demossigabi@gmail.com).
+Para mais informações, entre em contato através de [demossigabi@gmail.com](demossigabi@gmail.com).
