@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FilterTrack - Filtragem de Documentos</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>FilterTrack - Filtragem de Documentos</h1>
+
+    <form method="POST">
+        <label for="data-inicial">Data Inicial:</label>
+        <input type="date" id="data-inicial" name="data_inicial" required>
+
+        <label for="data-final">Data Final:</label>
+        <input type="date" id="data-final" name="data_final" required>
+
+        <label for="fornecedor">Nome do Fornecedor:</label>
+        <input type="text" id="fornecedor" name="fornecedor" placeholder="Digite o nome do fornecedor">
+
+        <label for="cnpj">CNPJ/Razão Social:</label>
+        <input type="text" id="cnpj" name="cnpj" placeholder="Digite o CNPJ ou Razão Social">
+
+        <button type="submit">Filtrar</button>
+    </form>
+
+    {% if resultado %}
+    <p>{{ resultado }}</p>
+    {% endif %}
+</body>
+</html>
