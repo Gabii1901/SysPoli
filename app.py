@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
 from dbfread import DBF
 import pandas as pd
 import os
 import tempfile
 import pickle
+from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Necessário para usar sessões
@@ -50,9 +51,7 @@ def carregar_dataframe_temporario(caminho):
 # Função para extrair o número da NF-e corretamente da chave
 def extrair_numero_nfe(chave_nfe):
     # O número da NF-e é representado por 9 dígitos da posição 26 até 34 da chave
-    # Corrigido para capturar os dígitos corretos da chave
     return chave_nfe[25:34] if len(chave_nfe) >= 34 else None
-
 
 # Rota para carregar e validar a tabela de documentos fiscais
 @app.route('/', methods=['GET', 'POST'])
@@ -150,11 +149,54 @@ def filtrar_documentos():
         if cnpj:
             documentos_filtrados = documentos_filtrados[documentos_filtrados['CNPJCPF'].str.contains(cnpj, case=False, na=False)]
 
+        # Salva o DataFrame filtrado em um novo arquivo temporário
+        caminho_df_filtrado = salvar_dataframe_temporario(documentos_filtrados)
+        session['caminho_dataframe_filtrado'] = caminho_df_filtrado  # Salva o caminho do DataFrame filtrado
+
         # Verifica o DataFrame após aplicar os filtros
         print("DataFrame após aplicar os filtros:")
         print(documentos_filtrados.head())
 
     return render_template('filtragem.html', documentos=documentos_filtrados.to_dict('records'))
+
+# Rota para exportar documentos filtrados para Excel
+@app.route('/exportar', methods=['GET'])
+def exportar_documentos():
+    # Verifica se o caminho do DataFrame filtrado está na sessão
+    if 'caminho_dataframe_filtrado' not in session:
+        return redirect(url_for('validar_documentos'))
+
+    # Carrega o DataFrame filtrado a partir do caminho temporário armazenado
+    caminho_df_filtrado = session['caminho_dataframe_filtrado']
+    documentos_filtrados = carregar_dataframe_temporario(caminho_df_filtrado)
+
+    # Reordenar e renomear as colunas conforme o layout da filtragem
+    documentos_filtrados = documentos_filtrados.rename(columns={
+        'DATAEMIS': 'Data Emissão',
+        'CNPJCPF': 'CNPJ/CPF',
+        'NOME': 'Fornecedor',
+        'Numero_NFE': 'Número NF-E',
+        'CHAVE': 'Chave NF-E'
+    })
+    documentos_filtrados = documentos_filtrados[['Data Emissão', 'CNPJ/CPF', 'Fornecedor', 'Número NF-E', 'Chave NF-E']]
+
+    # Cria um buffer de memória para o arquivo Excel
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    documentos_filtrados.to_excel(writer, index=False, sheet_name='Documentos Filtrados')
+
+    # Formatação do Excel (opcional)
+    workbook = writer.book
+    worksheet = writer.sheets['Documentos Filtrados']
+    for col_num, value in enumerate(documentos_filtrados.columns.values):
+        worksheet.write(0, col_num, value)
+        worksheet.set_column(col_num, col_num, 20)  # Ajusta a largura das colunas
+
+    writer.close()  # Corrigido para usar close() em vez de save()
+    output.seek(0)
+
+    # Envia o arquivo Excel para o usuário
+    return send_file(output, download_name='documentos_filtrados.xlsx', as_attachment=True)  # Usar download_name em vez de attachment_filename
 
 if __name__ == '__main__':
     app.run(debug=True)
