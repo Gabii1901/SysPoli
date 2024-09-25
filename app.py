@@ -1,202 +1,137 @@
-from flask import Flask, render_template, request, redirect, url_for, session, send_file
+from flask import Flask, render_template, request, redirect, url_for, send_file, session
+from flask_session import Session
 from dbfread import DBF
 import pandas as pd
-import os
-import tempfile
-import pickle
 from io import BytesIO
+import os
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'  # Necessário para usar sessões
+app.secret_key = 'supersecretkey'
 
-# Função para salvar o arquivo carregado temporariamente no sistema
-def salvar_arquivo_temporario(file, extension=None):
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=extension)
-    file.save(temp_file.name)
-    return temp_file.name
+# Configuração do Flask-Session para armazenar as sessões no sistema de arquivos
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
+app.config['SESSION_FILE_THRESHOLD'] = 500
+Session(app)
 
-# Função para ler toda a tabela de um arquivo .DBF
-def ler_dbf_completo(caminho):
+
+def ler_tabela_dbf(caminho):
     try:
-        # Abre o arquivo DBF ignorando a falta de arquivos de memo
         dbf_table = DBF(caminho, ignore_missing_memofile=True)
-        
-        # Lê todos os registros e colunas do arquivo DBF
-        registros = [record for record in dbf_table]
-        
-        # Converte para DataFrame
+        registros = [{coluna: str(record[coluna]).strip() for coluna in dbf_table.field_names} for record in dbf_table]
         df = pd.DataFrame(registros)
-        
-        print(f"Colunas disponíveis no arquivo {caminho}: {df.columns.tolist()}")
-        print(f"Primeiros registros lidos do arquivo {caminho}:\n{df.head()}")
-        
         return df
     except Exception as e:
-        print(f"Erro ao ler o arquivo {caminho}: {str(e)}")
         return pd.DataFrame({'Erro': [str(e)]})
 
-# Função para salvar DataFrame em um arquivo temporário
-def salvar_dataframe_temporario(df):
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pkl')
-    with open(temp_file.name, 'wb') as f:
-        pickle.dump(df, f)
-    return temp_file.name
 
-# Função para carregar DataFrame de um arquivo temporário
-def carregar_dataframe_temporario(caminho):
-    with open(caminho, 'rb') as f:
-        df = pickle.load(f)
-    return df
+def extrair_numero_nfe(chave):
+    if len(chave) >= 44:
+        return chave[25:34].strip()
+    return 'Número Inválido'
 
-# Função para extrair o número da NF-e corretamente da chave
-def extrair_numero_nfe(chave_nfe):
-    # O número da NF-e é representado por 9 dígitos da posição 26 até 34 da chave
-    return chave_nfe[25:34] if len(chave_nfe) >= 34 else None
 
-# Rota para carregar e validar a tabela de documentos fiscais
 @app.route('/', methods=['GET', 'POST'])
-def validar_documentos():
+def validar_arquivos():
     if request.method == 'POST':
-        # Recebe o arquivo de documentos fiscais
         documentos_files = request.files.getlist('documentos_files')
+        if not documentos_files:
+            return render_template('validacao_documentos.html', error='Por favor, selecione os arquivos .DBF e .FPT.')
 
-        if len(documentos_files) == 0:
-            return render_template('validacao_documentos.html', error="Por favor, selecione os arquivos .DBF e .FPT dos documentos fiscais.")
-
-        # Filtra arquivos .DBF e .FPT para documentos fiscais
-        caminho_documentos_dbf = None
-        caminho_documentos_fpt = None
+        caminho_documentos = None
         for file in documentos_files:
             if file.filename.lower().endswith('.dbf'):
-                caminho_documentos_dbf = salvar_arquivo_temporario(file, '.dbf')
-            elif file.filename.lower().endswith('.fpt'):
-                caminho_documentos_fpt = salvar_arquivo_temporario(file, '.fpt')
+                caminho_documentos = salvar_arquivo_temporario(file)
 
-        # Lê o arquivo .DBF completo (todas as colunas)
-        documentos_df = ler_dbf_completo(caminho_documentos_dbf)
+        if not caminho_documentos:
+            return render_template('validacao_documentos.html', error='Arquivo de documentos não encontrado.')
 
-        # Verifica se houve erro na leitura do arquivo
-        if 'Erro' in documentos_df.columns:
-            return render_template('validacao_documentos.html', error=f"Erro ao processar o arquivo: {documentos_df['Erro'][0]}")
-
-        # Adiciona uma nova coluna com o número da NF-e extraído da chave
-        documentos_df['Numero_NFE'] = documentos_df['CHAVE'].apply(extrair_numero_nfe)
-
-        # Salva o DataFrame em um arquivo temporário
-        caminho_df_temp = salvar_dataframe_temporario(documentos_df)
+        df_documentos = ler_tabela_dbf(caminho_documentos)
         
-        # Armazena o caminho do arquivo temporário na sessão
-        session['caminho_dataframe'] = caminho_df_temp
+        if 'Erro' in df_documentos.columns:
+            return render_template('validacao_documentos.html', error=df_documentos['Erro'][0])
 
-        # Remove os arquivos temporários após a leitura
-        os.remove(caminho_documentos_dbf)
-        if caminho_documentos_fpt:
-            os.remove(caminho_documentos_fpt)
+        session['documentos_df'] = df_documentos.to_dict('records')
 
-        # Redireciona para a próxima etapa de filtragem
         return redirect(url_for('filtrar_documentos'))
 
     return render_template('validacao_documentos.html')
 
-# Rota para a página de filtragem de documentos
+
 @app.route('/filtrar', methods=['GET', 'POST'])
 def filtrar_documentos():
-    # Verifica se o caminho do DataFrame está na sessão
-    if 'caminho_dataframe' not in session:
-        return redirect(url_for('validar_documentos'))
+    if 'documentos_df' not in session:
+        return redirect(url_for('validar_arquivos'))
 
-    # Carrega o DataFrame a partir do caminho temporário armazenado
-    caminho_df_temp = session['caminho_dataframe']
-    documentos_filtrados = carregar_dataframe_temporario(caminho_df_temp)
-
-    # Converte a coluna 'DATAEMIS' para datetime
-    try:
-        documentos_filtrados['DATAEMIS'] = pd.to_datetime(documentos_filtrados['DATAEMIS'], errors='coerce')
-    except Exception as e:
-        return render_template('filtragem.html', error=f"Erro ao converter datas: {str(e)}")
-
-    # Verifica o DataFrame antes de aplicar os filtros
-    print("DataFrame antes dos filtros:")
-    print(documentos_filtrados.head())
+    documentos_df = pd.DataFrame(session['documentos_df'])
 
     if request.method == 'POST':
-        # Converte as datas fornecidas no formulário para datetime
         data_inicial = request.form.get('data_inicial')
         data_final = request.form.get('data_final')
-
-        if data_inicial:
-            try:
-                data_inicial = pd.to_datetime(data_inicial)
-            except Exception as e:
-                return render_template('filtragem.html', error=f"Erro na data inicial: {str(e)}")
-
-        if data_final:
-            try:
-                data_final = pd.to_datetime(data_final)
-            except Exception as e:
-                return render_template('filtragem.html', error=f"Erro na data final: {str(e)}")
-
-        fornecedor_nome = request.form.get('fornecedor')
+        fornecedor = request.form.get('fornecedor')
         cnpj = request.form.get('cnpj')
 
-        # Aplica os filtros conforme necessário
         if data_inicial:
-            documentos_filtrados = documentos_filtrados[documentos_filtrados['DATAEMIS'] >= data_inicial]
+            documentos_df['DATAEMIS'] = pd.to_datetime(documentos_df['DATAEMIS'], errors='coerce', format='%Y-%m-%d')
+            data_inicial = pd.to_datetime(data_inicial, format='%Y-%m-%d')
+            documentos_df = documentos_df[documentos_df['DATAEMIS'] >= data_inicial]
+
         if data_final:
-            documentos_filtrados = documentos_filtrados[documentos_filtrados['DATAEMIS'] <= data_final]
-        if fornecedor_nome:
-            documentos_filtrados = documentos_filtrados[documentos_filtrados['NOME'].str.contains(fornecedor_nome, case=False, na=False)]
+            data_final = pd.to_datetime(data_final, format='%Y-%m-%d')
+            documentos_df = documentos_df[documentos_df['DATAEMIS'] <= data_final]
+
+        if fornecedor:
+            documentos_df = documentos_df[documentos_df['NOME'].str.contains(fornecedor, case=False, na=False)]
+
         if cnpj:
-            documentos_filtrados = documentos_filtrados[documentos_filtrados['CNPJCPF'].str.contains(cnpj, case=False, na=False)]
+            documentos_df = documentos_df[documentos_df['CNPJCPF'].str.contains(cnpj, case=False, na=False)]
 
-        # Salva o DataFrame filtrado em um novo arquivo temporário
-        caminho_df_filtrado = salvar_dataframe_temporario(documentos_filtrados)
-        session['caminho_dataframe_filtrado'] = caminho_df_filtrado  # Salva o caminho do DataFrame filtrado
+        # Adiciona a coluna de número NF-E
+        documentos_df['Numero_NFE'] = documentos_df['CHAVE'].apply(extrair_numero_nfe)
 
-        # Verifica o DataFrame após aplicar os filtros
-        print("DataFrame após aplicar os filtros:")
-        print(documentos_filtrados.head())
+        # Atualiza os documentos filtrados na sessão
+        session['documentos_filtrados'] = documentos_df.to_dict('records')
 
-    return render_template('filtragem.html', documentos=documentos_filtrados.to_dict('records'))
+    return render_template('filtragem.html', documentos=documentos_df.to_dict('records'))
 
-# Rota para exportar documentos filtrados para Excel
+
 @app.route('/exportar', methods=['GET'])
 def exportar_documentos():
-    # Verifica se o caminho do DataFrame filtrado está na sessão
-    if 'caminho_dataframe_filtrado' not in session:
-        return redirect(url_for('validar_documentos'))
+    if 'documentos_filtrados' not in session:
+        return redirect(url_for('filtrar_documentos'))
 
-    # Carrega o DataFrame filtrado a partir do caminho temporário armazenado
-    caminho_df_filtrado = session['caminho_dataframe_filtrado']
-    documentos_filtrados = carregar_dataframe_temporario(caminho_df_filtrado)
+    documentos_filtrados = pd.DataFrame(session['documentos_filtrados'])
 
-    # Reordenar e renomear as colunas conforme o layout da filtragem
-    documentos_filtrados = documentos_filtrados.rename(columns={
-        'DATAEMIS': 'Data Emissão',
-        'CNPJCPF': 'CNPJ/CPF',
-        'NOME': 'Fornecedor',
-        'Numero_NFE': 'Número NF-E',
-        'CHAVE': 'Chave NF-E'
-    })
-    documentos_filtrados = documentos_filtrados[['Data Emissão', 'CNPJ/CPF', 'Fornecedor', 'Número NF-E', 'Chave NF-E']]
-
-    # Cria um buffer de memória para o arquivo Excel
+    # Configuração do Excel
     output = BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
+
+    # Reordenar e Renomear colunas para Excel conforme a visualização na tabela HTML
+    documentos_filtrados = documentos_filtrados[['DATAEMIS', 'CNPJCPF', 'NOME', 'Numero_NFE', 'CHAVE']]
+    documentos_filtrados.columns = ['Data Emissão', 'CNPJ/CPF', 'Fornecedor', 'Número NF-E', 'Chave NF-E']
+
     documentos_filtrados.to_excel(writer, index=False, sheet_name='Documentos Filtrados')
 
-    # Formatação do Excel (opcional)
-    workbook = writer.book
+    # Formatação do Excel
     worksheet = writer.sheets['Documentos Filtrados']
     for col_num, value in enumerate(documentos_filtrados.columns.values):
         worksheet.write(0, col_num, value)
         worksheet.set_column(col_num, col_num, 20)  # Ajusta a largura das colunas
 
-    writer.close()  # Corrigido para usar close() em vez de save()
+    writer.close()
     output.seek(0)
 
-    # Envia o arquivo Excel para o usuário
-    return send_file(output, download_name='documentos_filtrados.xlsx', as_attachment=True)  # Usar download_name em vez de attachment_filename
+    return send_file(output, download_name='documentos_filtrados.xlsx', as_attachment=True)
+
+
+def salvar_arquivo_temporario(file):
+    temp_dir = os.path.join(os.getcwd(), 'temp_files')
+    os.makedirs(temp_dir, exist_ok=True)
+    caminho_arquivo = os.path.join(temp_dir, file.filename)
+    file.save(caminho_arquivo)
+    return caminho_arquivo
+
 
 if __name__ == '__main__':
     app.run(debug=True)
