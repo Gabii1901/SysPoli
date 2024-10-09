@@ -3,19 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FilterTrack - Seleção de Documentos</title>
+    <title>FilterTrack - Validação de Documentos</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>FilterTrack - Seleção de Documentos</h1>
-    <form method="POST" enctype="multipart/form-data">
-        <label for="documentos-files">Selecione os arquivos de Documentos Fiscais (.DBF e .FPT):</label>
-        <input type="file" id="documentos-files" name="documentos_files" accept=".dbf,.fpt" multiple required>
-        <button type="submit">Avançar</button>
-    </form>
-
-    {% if error %}
-    <p style="color: red;">{{ error }}</p>
-    {% endif %}
+    <div class="container">
+        <h1>FilterTrack - Validação de Documentos</h1>
+        <form action="/" method="post" enctype="multipart/form-data">
+            <div class="input-group">
+                <label for="documentos_files">Selecione os arquivos .DBF:</label>
+                <input type="file" id="documentos_files" name="documentos_files" multiple>
+            </div>
+            <button type="submit" class="btn">Enviar</button>
+        </form>
+        {% if error %}
+        <div class="error">
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+    </div>
 </body>
 </html>
