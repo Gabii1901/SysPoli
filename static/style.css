@@ -1,76 +1,120 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+/* Estilo para o container principal */
+.container {
+    max-width: 1000px;
+    margin: 40px auto;
     padding: 20px;
-    margin: 0;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Estilo para o cabeçalho */
 h1 {
-    color: #333;
-    margin-bottom: 20px;
-    font-size: 24px;
     text-align: center;
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 20px;
 }
 
+/* Estilo para os formulários */
 form {
-    margin-top: 20px;
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
 }
 
-input, button {
+/* Estilo para os inputs */
+input[type="text"], input[type="date"] {
+    width: 220px;
     padding: 10px;
-    margin: 10px 0;
-    font-size: 16px;
-    width: 100%;
-    max-width: 400px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
     box-sizing: border-box;
 }
 
-label {
-    margin-bottom: 5px;
-    font-weight: bold;
+input[type="text"]::placeholder, input[type="date"]::placeholder {
+    color: #999;
 }
 
-button {
-    background-color: #007BFF;
+/* Estilo para o botão de envio */
+button[type="submit"] {
+    background-color: #28a745;
     color: white;
+    padding: 10px 20px;
+    font-size: 14px;
     border: none;
+    border-radius: 5px;
     cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-button:hover {
-    background-color: #0056b3;
+button[type="submit"]:hover {
+    background-color: #218838;
 }
 
+/* Estilo para a tabela */
 table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
 }
 
+/* Estilo para as células da tabela */
 th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
+    padding: 10px;
     text-align: left;
-    word-wrap: break-word; /* Permite quebra de linha automática */
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
 }
 
+/* Estilo para o cabeçalho da tabela */
 th {
-    background-color: #007BFF;
-    color: white;
-}
-
-tr:nth-child(even) {
     background-color: #f2f2f2;
+    color: #333;
+    font-weight: bold;
 }
 
-tr:hover {
-    background-color: #ddd;
+/* Estilo para as colunas Data e CNPJ */
+th.coluna-data, td.coluna-data {
+    width: 150px;  /* Ajusta a largura da coluna Data */
 }
 
-/* Ajuste da largura da coluna CNPJ/CPF */
-th:nth-child(2), td:nth-child(2) {
-    width: 200px; /* Ajuste a largura conforme necessário */
+th.coluna-cnpj, td.coluna-cnpj {
+    width: 200px;  /* Ajusta a largura da coluna CNPJ */
+}
+
+/* Estilo para o botão de exportação */
+a.btn {
+    display: inline-block;
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    margin-top: 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+a.btn:hover {
+    background-color: #0056b3;
+}
+
+/* Responsividade para dispositivos móveis */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    form {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    input[type="text"], input[type="date"] {
+        width: 100%;
+    }
 }
