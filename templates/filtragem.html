@@ -7,62 +7,52 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>FilterTrack - Filtragem de Documentos</h1>
-    
-    <form method="POST">
-        <div class="form-group">
-            <label for="data-inicial">Data Inicial:</label>
-            <input type="date" id="data-inicial" name="data_inicial">
-        </div>
+    <div class="container">
+        <h1>Filtragem de Documentos</h1>
+        <form method="POST">
+            <label for="data_inicial">Data Inicial:</label>
+            <!-- Trocar para o tipo "date" -->
+            <input type="date" id="data_inicial" name="data_inicial" value="{{ data_inicial or default_data_inicial }}">
 
-        <div class="form-group">
-            <label for="data-final">Data Final:</label>
-            <input type="date" id="data-final" name="data_final">
-        </div>
+            <label for="data_final">Data Final:</label>
+            <!-- Trocar para o tipo "date" -->
+            <input type="date" id="data_final" name="data_final" value="{{ data_final or default_data_final }}">
 
-        <div class="form-group">
-            <label for="fornecedor">Nome do Fornecedor:</label>
-            <input type="text" id="fornecedor" name="fornecedor" placeholder="Digite o nome do fornecedor">
-        </div>
+            <label for="fornecedor">Fornecedor:</label>
+            <input type="text" id="fornecedor" name="fornecedor" value="{{ fornecedor }}">
 
-        <div class="form-group">
-            <label for="cnpj">CNPJ/Razão Social:</label>
-            <input type="text" id="cnpj" name="cnpj" placeholder="Digite o CNPJ ou Razão Social">
-        </div>
+            <label for="cnpj">CNPJ/CPF:</label>
+            <input type="text" id="cnpj" name="cnpj" value="{{ cnpj }}">
 
-        <button type="submit">Filtrar</button>
-    </form>
+            <button type="submit">Filtrar</button>
+        </form>
 
-    {% if documentos and documentos|length > 0 %}
-    <h2>Resultados Filtrados</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Data Emissão</th>
-                <th>CNPJ/CPF</th>
-                <th>Fornecedor</th>
-                <th>Número NF-E</th>
-                <th>Chave NF-E</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for doc in documentos %}
-            <tr>
-                <td>{{ doc.DATAEMIS }}</td>
-                <td>{{ doc.CNPJCPF }}</td>
-                <td>{{ doc.NOME }}</td>
-                <td>{{ doc.Numero_NFE }}</td>
-                <td>{{ doc.CHAVE }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <!-- Botão para exportar os dados filtrados para Excel -->
-    <form action="{{ url_for('exportar_documentos') }}" method="get">
-        <button type="submit">Exportar para Excel</button>
-    </form>
-    {% else %}
-    <p>Nenhum documento encontrado ou não há documentos que correspondam aos filtros aplicados.</p>
-    {% endif %}
+        <table>
+            <thead>
+                <tr>
+                    <th class="coluna-data">Data Emissão</th>
+                    <th class="coluna-cnpj">CNPJ/CPF</th>
+                    <th>Fornecedor</th>
+                    <th>Número NF-E</th>
+                    <th>Chave NF-E</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documentos %}
+                <tr>
+                    <td class="coluna-data">
+                        {{ doc['DATAEMIS'].strftime('%d/%m/%Y %H:%M:%S') if doc['DATAEMIS'] else '' }}
+                    </td>
+                    <td class="coluna-cnpj">{{ doc['CNPJCPF'] }}</td>
+                    <td>{{ doc['NOME'] }}</td>
+                    <td>{{ doc['Numero_NFE'] }}</td>
+                    <td>{{ doc['CHAVE'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <a href="{{ url_for('exportar_documentos') }}" class="btn">Exportar para Excel</a>
+    </div>
 </body>
 </html>
