@@ -1,20 +1,16 @@
-document.getElementById('form').addEventListener('submit', function (e) {
+document.getElementById('form-documentos').addEventListener('submit', function (e) { 
     e.preventDefault();
     
-    const formData = new FormData(document.getElementById('form'));
+    const formData = new FormData(this);
 
-    fetch('/documentos', {
+    fetch('/validar', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => response.text())
     .then(data => {
         const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = JSON.stringify(data, null, 2);
+        resultDiv.innerHTML = data;
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => console.error('Erro:', error));
 });
-
-function exportar() {
-    // Função de exportação, se necessário
-}
