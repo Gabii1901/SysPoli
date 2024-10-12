@@ -1,120 +1,120 @@
-/* Estilo para o container principal */
-.container {
-    max-width: 1000px;
-    margin: 40px auto;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+/* Estilos gerais para todas as páginas */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
 }
 
-/* Estilo para o cabeçalho */
+/* Container padrão */
+.container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
 h1 {
     text-align: center;
-    color: #333;
-    font-size: 24px;
-    margin-bottom: 20px;
 }
 
-/* Estilo para os formulários */
-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: space-between;
+label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
 }
 
-/* Estilo para os inputs */
-input[type="text"], input[type="date"] {
-    width: 220px;
+input[type="date"], input[type="text"], input[type="file"] {
+    width: 100%;
     padding: 10px;
-    font-size: 14px;
+    margin: 10px 0;
     border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
+    border-radius: 3px;
 }
 
-input[type="text"]::placeholder, input[type="date"]::placeholder {
-    color: #999;
-}
-
-/* Estilo para o botão de envio */
-button[type="submit"] {
-    background-color: #28a745;
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
     color: white;
-    padding: 10px 20px;
-    font-size: 14px;
     border: none;
-    border-radius: 5px;
+    border-radius: 3px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
 }
 
-button[type="submit"]:hover {
-    background-color: #218838;
+button:hover {
+    background-color: #0056b3;
 }
 
-/* Estilo para a tabela */
 table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
 }
 
-/* Estilo para as células da tabela */
+table, th, td {
+    border: 1px solid black;
+}
+
 th, td {
-    padding: 10px;
+    padding: 8px;
     text-align: left;
-    border-bottom: 1px solid #ddd;
-    font-size: 14px;
 }
 
-/* Estilo para o cabeçalho da tabela */
 th {
-    background-color: #f2f2f2;
-    color: #333;
-    font-weight: bold;
-}
-
-/* Estilo para as colunas Data e CNPJ */
-th.coluna-data, td.coluna-data {
-    width: 150px;  /* Ajusta a largura da coluna Data */
-}
-
-th.coluna-cnpj, td.coluna-cnpj {
-    width: 200px;  /* Ajusta a largura da coluna CNPJ */
-}
-
-/* Estilo para o botão de exportação */
-a.btn {
-    display: inline-block;
     background-color: #007bff;
     color: white;
-    padding: 10px 20px;
-    margin-top: 20px;
-    text-decoration: none;
+}
+
+.error {
+    color: red;
+    text-align: center;
+}
+
+/* Estilos específicos para a tela de login */
+.login-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #e0f7fa; /* cor diferente para o fundo da tela de login */
+}
+
+.login-container {
+    width: 300px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #333;
+}
+
+input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
     border-radius: 5px;
-    font-size: 14px;
-    transition: background-color 0.3s ease;
+    font-size: 16px;
 }
 
-a.btn:hover {
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
     background-color: #0056b3;
-}
-
-/* Responsividade para dispositivos móveis */
-@media (max-width: 768px) {
-    .container {
-        padding: 15px;
-    }
-
-    form {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    input[type="text"], input[type="date"] {
-        width: 100%;
-    }
 }
