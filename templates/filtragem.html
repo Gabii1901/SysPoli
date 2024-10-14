@@ -29,11 +29,12 @@
             <thead>
                 <tr>
                     <th class="coluna-data">Data Emissão</th>
+                    <th>Empresa</th> <!-- Nova Coluna Empresa -->
+                    <th>Código do Fornecedor</th>
                     <th class="coluna-cnpj">CNPJ/CPF</th>
                     <th>Fornecedor</th>
                     <th>Número NF-E</th>
-                    <th>Chave NF-E</th>
-                    <th>Código do Fornecedor</th>
+                    <th>Chave NF-E</th>    
                 </tr>
             </thead>
             <tbody>
@@ -42,17 +43,18 @@
                     <td class="coluna-data">
                         {{ doc['DATAEMIS'].strftime('%d/%m/%Y') if doc['DATAEMIS'] else '' }}
                     </td>
+                    <td>{{ doc['Empresa'] }}</td> <!-- Mostrando a empresa -->
                     <td>{{ doc['CODFOR'] }}</td>
                     <td class="coluna-cnpj">{{ doc['CNPJCPF'] }}</td>
                     <td>{{ doc['NOME'] }}</td>
                     <td>{{ doc['Numero_NFE'] }}</td>
-                    <td>{{ doc['CHAVE'] }}</td>
+                    <td>{{ doc['CHAVE'] }}</td>     
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
         <a href="{{ url_for('exportar_documentos') }}" class="btn-exportar">Exportar para Excel</a>
     </div>
 </body>
 </html>
-
