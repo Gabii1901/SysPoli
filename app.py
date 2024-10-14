@@ -28,6 +28,17 @@ app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
 Session(app)
 
+# Caminhos fixos para as tabelas das empresas
+CAMINHOS_DOCUMENTOS = [
+    r'C:\polioeste\Genesis\Dados\E01\MANIFESTODOCUMENTOSFISCAIS.DBF',
+    r'C:\polioeste\Genesis\Dados\E03\MANIFESTODOCUMENTOSFISCAIS.DBF',
+    r'C:\polioeste\Genesis\Dados\E04\MANIFESTODOCUMENTOSFISCAIS.DBF',
+    r'C:\polioeste\Genesis\Dados\E05\MANIFESTODOCUMENTOSFISCAIS.DBF'
+]
+
+# Caminho fixo para a tabela de fornecedores
+CAMINHO_FIXO_TABELA_FORNECEDORES = r'C:\polioeste\Genesis\Dados\FORNECEDORES.DBF'
+
 # Função para gerar a senha dinâmica
 def gerar_senha():
     data_atual = datetime.now()
@@ -36,95 +47,135 @@ def gerar_senha():
     senha = f"{ano}POLI{dia}"
     return senha
 
-# Função para ler arquivos DBF
+# Função para ler uma tabela de documentos fiscais
 def ler_tabela_dbf(caminho):
     try:
         dbf_table = DBF(caminho, ignore_missing_memofile=True)
         registros = [{coluna: str(record[coluna]).strip() for coluna in dbf_table.field_names} for record in dbf_table]
         df = pd.DataFrame(registros)
-        
-        # Verifique se a leitura está correta
+
         if df.empty:
             logger.warning(f"Nenhum dado encontrado no arquivo {caminho}")
         else:
             logger.info(f"{len(df)} registros encontrados no arquivo {caminho}")
         
-        # Verificar se a coluna de data está no formato correto
         if 'DATAEMIS' in df.columns:
             df['DATAEMIS'] = pd.to_datetime(df['DATAEMIS'], errors='coerce', format='%Y-%m-%d')
-        
+
         return df
     except Exception as e:
         logger.error(f"Erro ao ler o arquivo DBF: {e}")
         return pd.DataFrame({'Erro': [str(e)]})
 
-# Função para extrair número da NF-e
+# Função para ler a tabela de fornecedores
+def ler_fornecedores():
+    try:
+        fornecedores_table = DBF(CAMINHO_FIXO_TABELA_FORNECEDORES, ignore_missing_memofile=True)
+        registros_fornecedores = [{coluna: str(record[coluna]).strip() for coluna in fornecedores_table.field_names} for record in fornecedores_table]
+        df_fornecedores = pd.DataFrame(registros_fornecedores)
+
+        # Log das colunas para diagnóstico
+        logger.info(f"Colunas da tabela de fornecedores: {df_fornecedores.columns.tolist()}")
+
+        # Verifica se há dados na tabela de fornecedores
+        if df_fornecedores.empty:
+            logger.warning(f"Nenhum dado encontrado na tabela de fornecedores {CAMINHO_FIXO_TABELA_FORNECEDORES}")
+        else:
+            logger.info(f"{len(df_fornecedores)} registros encontrados na tabela de fornecedores")
+        
+        # Combina CNPJ e CPF em uma única coluna chamada 'CNPJCPF'
+        df_fornecedores['CNPJCPF'] = df_fornecedores.apply(
+            lambda row: row['CNPJ'] if pd.notnull(row['CNPJ']) else row['CPF'], axis=1
+        )
+        
+        return df_fornecedores
+    except Exception as e:
+        logger.error(f"Erro ao ler a tabela de fornecedores: {e}")
+        return pd.DataFrame({'Erro': [str(e)]})
+
+# Função para extrair o número da NF-e a partir da chave
 def extrair_numero_nfe(chave):
     if len(chave) >= 44:
-        return chave[25:34].strip()
+        return chave[25:34].strip()  # Extrai os dígitos da NF-e
     return 'Número Inválido'
 
-# Função para salvar arquivos temporários
-def salvar_arquivo_temporario(file):
-    temp_dir = os.path.join(os.getcwd(), 'temp_files')
-    os.makedirs(temp_dir, exist_ok=True)
-    caminho_arquivo = os.path.join(temp_dir, file.filename)
-    file.save(caminho_arquivo)
-    return caminho_arquivo
+# Função para ler todas as tabelas de documentos fiscais e combiná-las
+def ler_tabelas_documentos_empresas():
+    try:
+        # Lista para armazenar os DataFrames de todas as empresas
+        lista_dfs_empresas = []
+        
+        # Itera sobre cada caminho da lista de empresas e lê os documentos fiscais
+        for caminho in CAMINHOS_DOCUMENTOS:
+            df_documentos = ler_tabela_dbf(caminho)
+            if not df_documentos.empty:
+                lista_dfs_empresas.append(df_documentos)
+        
+        # Combina todos os DataFrames em um único DataFrame
+        if lista_dfs_empresas:
+            df_documentos_combinado = pd.concat(lista_dfs_empresas, ignore_index=True)
+            return df_documentos_combinado
+        else:
+            logger.error("Nenhum dado encontrado nas tabelas de documentos fiscais das empresas.")
+            return pd.DataFrame()
+    
+    except Exception as e:
+        logger.error(f"Erro ao combinar as tabelas de documentos fiscais: {e}")
+        return pd.DataFrame({'Erro': [str(e)]})
+
+# Função para relacionar documentos fiscais com fornecedores
+def relacionar_documentos_com_fornecedores(df_documentos, df_fornecedores):
+    try:
+        # Realiza o merge com base na coluna 'CNPJCPF' e traz o código do fornecedor 'CODFOR'
+        df_merged = pd.merge(df_documentos, df_fornecedores[['CNPJCPF', 'CODFOR']], on='CNPJCPF', how='left')
+
+        # Se não houver fornecedor correspondente, o código será em branco
+        df_merged['CODFOR'] = df_merged['CODFOR'].fillna('')
+
+        # Adicionar o número da NF-e extraído da coluna 'CHAVE'
+        df_merged['Numero_NFE'] = df_merged['CHAVE'].apply(extrair_numero_nfe)
+
+        return df_merged
+    except Exception as e:
+        logger.error(f"Erro ao relacionar documentos fiscais com fornecedores: {e}")
+        return df_documentos
 
 # Rota de login
 @app.route('/', methods=['GET', 'POST'])
 def login():
-    senha_correta = gerar_senha()  # Senha dinâmica
+    senha_correta = gerar_senha()  # Gera a senha dinâmica com base na data
     if request.method == 'POST':
         senha_inserida = request.form.get('senha')
-        if senha_inserida is None or senha_inserida == '':
-            logger.warning('Nenhuma senha foi inserida.')
-            return render_template('login.html', error='Por favor, insira a senha.')
         if senha_inserida == senha_correta:
             session['logado'] = True
-            logger.info('Login bem-sucedido.')
             return redirect(url_for('validar_arquivos'))
         else:
-            logger.warning('Senha incorreta.')
-            return render_template('login.html', error='Senha incorreta. Tente novamente.')
+            return render_template('login.html', error='Senha incorreta.')
     return render_template('login.html')
 
 # Rota principal para validação de arquivos
-@app.route('/validar', methods=['GET', 'POST'])
+@app.route('/validar', methods=['GET'])
 def validar_arquivos():
     if not session.get('logado'):
-        logger.warning('Acesso não autorizado. Redirecionando para login.')
         return redirect(url_for('login'))
 
-    if request.method == 'POST':
-        documentos_files = request.files.getlist('documentos_files')
-        if not documentos_files or len(documentos_files) == 0:
-            logger.error('Nenhum arquivo foi enviado.')
-            return render_template('validacao_documentos.html', error='Por favor, selecione os arquivos .DBF.')
-        
-        caminho_documentos = None
-        for file in documentos_files:
-            if file.filename.lower().endswith('.dbf'):
-                logger.info(f"Arquivo recebido: {file.filename}")
-                caminho_documentos = salvar_arquivo_temporario(file)
+    # Ler a tabela de fornecedores
+    df_fornecedores = ler_fornecedores()
 
-        if not caminho_documentos:
-            logger.error('Arquivo de documentos não encontrado.')
-            return render_template('validacao_documentos.html', error='Arquivo de documentos não encontrado.')
+    # Ler as tabelas de documentos fiscais de todas as empresas
+    df_documentos = ler_tabelas_documentos_empresas()
 
-        # Ler os documentos e armazenar na sessão
-        df_documentos = ler_tabela_dbf(caminho_documentos)
+    # Verifica se houve erro na leitura das tabelas
+    if 'Erro' in df_documentos.columns:
+        return render_template('validacao_documentos.html', error=df_documentos['Erro'][0])
+    if 'Erro' in df_fornecedores.columns:
+        return render_template('validacao_documentos.html', error=df_fornecedores['Erro'][0])
 
-        if 'Erro' in df_documentos.columns:
-            logger.error(f"Erro ao processar o arquivo: {df_documentos['Erro'][0]}")
-            return render_template('validacao_documentos.html', error=df_documentos['Erro'][0])
+    # Relacionar os documentos fiscais com os fornecedores e extrair o número da NF-e
+    df_documentos_relacionados = relacionar_documentos_com_fornecedores(df_documentos, df_fornecedores)
 
-        logger.info(f"Documentos carregados: {df_documentos.shape[0]} registros")
-        session['documentos_df'] = df_documentos.to_dict('records')
-        return redirect(url_for('filtrar_documentos'))
-
-    return render_template('validacao_documentos.html')
+    session['documentos_df'] = df_documentos_relacionados.to_dict('records')
+    return redirect(url_for('filtrar_documentos'))
 
 # Rota para filtrar documentos
 @app.route('/filtrar', methods=['GET', 'POST'])
@@ -132,6 +183,7 @@ def filtrar_documentos():
     if 'documentos_df' not in session:
         return redirect(url_for('validar_arquivos'))
 
+    # Recupera o DataFrame dos documentos armazenado na sessão
     documentos_df = pd.DataFrame(session['documentos_df'])
 
     # Obter o mês atual para os valores padrão
@@ -139,13 +191,13 @@ def filtrar_documentos():
     primeiro_dia_mes = hoje.replace(day=1).strftime('%Y-%m-%d')
     ultimo_dia_mes = hoje.strftime('%Y-%m-%d')
 
-    # Variáveis de filtros com valores iniciais ou valores do formulário
+    # Captura os valores dos campos de filtro
     data_inicial = request.form.get('data_inicial', primeiro_dia_mes)
     data_final = request.form.get('data_final', ultimo_dia_mes)
     fornecedor = request.form.get('fornecedor', '')
     cnpj = request.form.get('cnpj', '')
 
-    # Filtragem dos documentos com base nos parâmetros
+    # Aplica o filtro por data
     if data_inicial:
         documentos_df['DATAEMIS'] = pd.to_datetime(documentos_df['DATAEMIS'], errors='coerce')
         documentos_df = documentos_df[documentos_df['DATAEMIS'] >= pd.to_datetime(data_inicial)]
@@ -153,17 +205,13 @@ def filtrar_documentos():
     if data_final:
         documentos_df = documentos_df[documentos_df['DATAEMIS'] <= pd.to_datetime(data_final)]
 
+    # Aplica o filtro por fornecedor
     if fornecedor:
         documentos_df = documentos_df[documentos_df['NOME'].str.contains(fornecedor, case=False, na=False)]
 
+    # Aplica o filtro por CNPJ/CPF
     if cnpj:
         documentos_df = documentos_df[documentos_df['CNPJCPF'].str.contains(cnpj, case=False, na=False)]
-
-    # Adicionar número da NF-E
-    documentos_df['Numero_NFE'] = documentos_df['CHAVE'].apply(extrair_numero_nfe)
-
-    # Verificar se os documentos estão sendo filtrados corretamente
-    logger.info(f"Documentos filtrados: {documentos_df.shape[0]} registros")
 
     # Armazena os documentos filtrados na sessão
     session['documentos_filtrados'] = documentos_df.to_dict('records')
@@ -178,36 +226,21 @@ def filtrar_documentos():
                            default_data_inicial=primeiro_dia_mes,
                            default_data_final=ultimo_dia_mes)
 
+
 # Rota para exportar documentos filtrados para Excel
 @app.route('/exportar', methods=['GET'])
 def exportar_documentos():
-    if 'documentos_filtrados' not in session:
-        logger.error("Nenhum documento filtrado disponível para exportação.")
+    if 'documentos_df' not in session:
         return redirect(url_for('filtrar_documentos'))
 
-    # Recupera os documentos filtrados da sessão
-    documentos_filtrados = pd.DataFrame(session['documentos_filtrados'])
-
-    # Verificar se a coluna 'Numero_NFE' existe, caso contrário, adicioná-la
-    if 'Numero_NFE' not in documentos_filtrados.columns:
-        logger.info("Adicionando a coluna 'Numero_NFE'")
-        documentos_filtrados['Numero_NFE'] = documentos_filtrados['CHAVE'].apply(extrair_numero_nfe)
-
-    # Verificar se todas as colunas necessárias estão presentes
-    colunas_necessarias = ['DATAEMIS', 'CNPJCPF', 'NOME', 'Numero_NFE', 'CHAVE']
-    if not all(coluna in documentos_filtrados.columns for coluna in colunas_necessarias):
-        logger.error("Algumas colunas necessárias estão faltando no DataFrame.")
-        return redirect(url_for('filtrar_documentos'))
-
-    # Configuração do Excel
+    documentos_filtrados = pd.DataFrame(session['documentos_df'])
     output = BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
 
     # Reordenar e renomear colunas para o Excel
-    documentos_filtrados = documentos_filtrados[['DATAEMIS', 'CNPJCPF', 'NOME', 'Numero_NFE', 'CHAVE']]
-    documentos_filtrados.columns = ['Data Emissão', 'CNPJ/CPF', 'Fornecedor', 'Número NF-E', 'Chave NF-E']
+    documentos_filtrados = documentos_filtrados[['DATAEMIS', 'CNPJCPF', 'NOME', 'Numero_NFE', 'CHAVE', 'CODFOR']]
+    documentos_filtrados.columns = ['Data Emissão', 'CNPJ/CPF', 'Fornecedor', 'Número NF-E', 'Chave NF-E', 'Código do Fornecedor']
 
-    # Exportar os dados para o Excel
     documentos_filtrados.to_excel(writer, index=False, sheet_name='Documentos Filtrados')
     writer.close()
 
