@@ -28,12 +28,12 @@ app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
 Session(app)
 
-# Caminhos fixos para as tabelas das empresas
+# Caminhos fixos para as tabelas das empresas (sem a empresa 2)
 CAMINHOS_DOCUMENTOS = [
-    r'C:\polioeste\Genesis\Dados\E01\MANIFESTODOCUMENTOSFISCAIS.DBF',
-    r'C:\polioeste\Genesis\Dados\E03\MANIFESTODOCUMENTOSFISCAIS.DBF',
-    r'C:\polioeste\Genesis\Dados\E04\MANIFESTODOCUMENTOSFISCAIS.DBF',
-    r'C:\polioeste\Genesis\Dados\E05\MANIFESTODOCUMENTOSFISCAIS.DBF'
+    r'C:\polioeste\Genesis\Dados\E01\MANIFESTODOCUMENTOSFISCAIS.DBF',  # Polioeste - SC
+    r'C:\polioeste\Genesis\Dados\E03\MANIFESTODOCUMENTOSFISCAIS.DBF',  # Agro Log
+    r'C:\polioeste\Genesis\Dados\E04\MANIFESTODOCUMENTOSFISCAIS.DBF',  # Polioeste - PR
+    r'C:\polioeste\Genesis\Dados\E05\MANIFESTODOCUMENTOSFISCAIS.DBF'   # Polioeste - RS
 ]
 
 # Caminho fixo para a tabela de fornecedores
@@ -99,16 +99,20 @@ def extrair_numero_nfe(chave):
         return chave[25:34].strip()  # Extrai os dígitos da NF-e
     return 'Número Inválido'
 
-# Função para ler todas as tabelas de documentos fiscais e combiná-las
+# Função para ler todas as tabelas de documentos fiscais e combiná-las com a coluna "Empresa"
 def ler_tabelas_documentos_empresas():
     try:
         # Lista para armazenar os DataFrames de todas as empresas
         lista_dfs_empresas = []
+
+        # Definindo os nomes das empresas
+        empresas = ['Polioeste - SC', 'Agro Log', 'Polioeste - PR', 'Polioeste - RS']
         
         # Itera sobre cada caminho da lista de empresas e lê os documentos fiscais
-        for caminho in CAMINHOS_DOCUMENTOS:
+        for index, caminho in enumerate(CAMINHOS_DOCUMENTOS):
             df_documentos = ler_tabela_dbf(caminho)
             if not df_documentos.empty:
+                df_documentos['Empresa'] = empresas[index]  # Adiciona a coluna "Empresa" com o nome da empresa
                 lista_dfs_empresas.append(df_documentos)
         
         # Combina todos os DataFrames em um único DataFrame
@@ -183,7 +187,6 @@ def filtrar_documentos():
     if 'documentos_df' not in session:
         return redirect(url_for('validar_arquivos'))
 
-    # Recupera o DataFrame dos documentos armazenado na sessão
     documentos_df = pd.DataFrame(session['documentos_df'])
 
     # Obter o mês atual para os valores padrão
@@ -226,20 +229,19 @@ def filtrar_documentos():
                            default_data_inicial=primeiro_dia_mes,
                            default_data_final=ultimo_dia_mes)
 
-
 # Rota para exportar documentos filtrados para Excel
 @app.route('/exportar', methods=['GET'])
 def exportar_documentos():
-    if 'documentos_df' not in session:
+    if 'documentos_filtrados' not in session:
         return redirect(url_for('filtrar_documentos'))
 
-    documentos_filtrados = pd.DataFrame(session['documentos_df'])
+    documentos_filtrados = pd.DataFrame(session['documentos_filtrados'])
     output = BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
 
     # Reordenar e renomear colunas para o Excel
-    documentos_filtrados = documentos_filtrados[['DATAEMIS', 'CNPJCPF', 'NOME', 'Numero_NFE', 'CHAVE', 'CODFOR']]
-    documentos_filtrados.columns = ['Data Emissão', 'CNPJ/CPF', 'Fornecedor', 'Número NF-E', 'Chave NF-E', 'Código do Fornecedor']
+    documentos_filtrados = documentos_filtrados[['DATAEMIS', 'CNPJCPF', 'NOME', 'Numero_NFE', 'CHAVE', 'CODFOR', 'Empresa']]
+    documentos_filtrados.columns = ['Data Emissão', 'CNPJ/CPF', 'Fornecedor', 'Número NF-E', 'Chave NF-E', 'Código do Fornecedor', 'Empresa']
 
     documentos_filtrados.to_excel(writer, index=False, sheet_name='Documentos Filtrados')
     writer.close()
