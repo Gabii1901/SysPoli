@@ -1,22 +1,19 @@
+<!-- validacao_documentos.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Validação de Documentos - SysPoli</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Validação de Documentos</title>
 </head>
 <body>
-    <div class="container">
-        <h1>Validação de Documentos</h1>
-        <form method="POST" action="{{ url_for('validar_arquivos') }}" enctype="multipart/form-data">
-            <label for="documentos_files">Arquivos .DBF:</label>
-            <input type="file" id="documentos_files" name="documentos_files" multiple required>
-            {% if error %}
-                <p class="error">{{ error }}</p>
-            {% endif %}
-            <button type="submit">Validar</button>
-        </form>
-    </div>
+    <h1>Validação de Documentos</h1>
+
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% else %}
+        <p>Os documentos foram carregados automaticamente do sistema.</p>
+        <a href="{{ url_for('filtrar_documentos') }}">Ir para Filtragem de Documentos</a>
+    {% endif %}
 </body>
 </html>
