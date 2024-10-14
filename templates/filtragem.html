@@ -33,14 +33,16 @@
                     <th>Fornecedor</th>
                     <th>Número NF-E</th>
                     <th>Chave NF-E</th>
+                    <th>Código do Fornecedor</th>
                 </tr>
             </thead>
             <tbody>
                 {% for doc in documentos %}
                 <tr>
                     <td class="coluna-data">
-                        {{ doc['DATAEMIS'].strftime('%d/%m/%Y %H:%M:%S') if doc['DATAEMIS'] else '' }}
+                        {{ doc['DATAEMIS'].strftime('%d/%m/%Y') if doc['DATAEMIS'] else '' }}
                     </td>
+                    <td>{{ doc['CODFOR'] }}</td>
                     <td class="coluna-cnpj">{{ doc['CNPJCPF'] }}</td>
                     <td>{{ doc['NOME'] }}</td>
                     <td>{{ doc['Numero_NFE'] }}</td>
@@ -49,8 +51,8 @@
                 {% endfor %}
             </tbody>
         </table>
-
-        <a href="{{ url_for('exportar_documentos') }}" class="btn">Exportar para Excel</a>
+        <a href="{{ url_for('exportar_documentos') }}" class="btn-exportar">Exportar para Excel</a>
     </div>
 </body>
 </html>
+
