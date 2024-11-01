@@ -1,51 +1,11 @@
-/* Estilos gerais para todas as páginas */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-}
-
-/* Container padrão */
-.container {
-    width: 80%;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: white;
-    border-radius: 5px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
-    text-align: center;
-}
-
-label {
-    font-weight: bold;
-    margin-top: 10px;
-    display: block;
-}
-
-input[type="date"], input[type="text"], input[type="file"] {
+/* Define o corpo da página para preencher a tela inteira sem margens extras */
+body, html {
+    margin: 10px;
+    padding: 0;
     width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 3px;
 }
 
-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-
+/* Ajuste na tabela para que ocupe toda a largura disponível */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -59,6 +19,7 @@ table, th, td {
 th, td {
     padding: 8px;
     text-align: left;
+    white-space: nowrap;
 }
 
 th {
@@ -66,55 +27,45 @@ th {
     color: white;
 }
 
-.error {
-    color: red;
-    text-align: center;
+tbody tr:nth-child(even) {
+    background-color: #f2f2f2;
 }
 
-/* Estilos específicos para a tela de login */
-.login-body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #e0f7fa; /* cor diferente para o fundo da tela de login */
-}
-
-.login-container {
-    width: 300px;
-    padding: 20px;
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
-    text-align: center;
-}
-
-h2 {
-    margin-bottom: 20px;
-    font-size: 24px;
-    color: #333;
-}
-
-input[type="password"] {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
-}
-
-button {
-    width: 100%;
-    padding: 10px;
+/* Estilizando o botão de filtragem */
+button, .btn-exportar {
+    display: inline-block;
+    padding: 10px 20px;
     background-color: #007bff;
     color: white;
-    border: none;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
+    transition: background-color 0.3s ease;
+    border: none;
+    margin-top: 20px;
 }
 
-button:hover {
+button:hover, .btn-exportar:hover {
     background-color: #0056b3;
+}
+
+button:active, .btn-exportar:active {
+    background-color: #004494;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    table {
+        font-size: 14px;
+    }
+
+    button {
+        font-size: 14px;
+    }
 }
