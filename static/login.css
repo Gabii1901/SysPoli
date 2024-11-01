@@ -1,0 +1,59 @@
+/* Estilos específicos para a tela de login */
+.login-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Altura total da viewport para centralização vertical */
+    background-color: #f4f4f4; /* Cor de fundo clara */
+    margin: 0; /* Remove as margens do body */
+}
+
+
+h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #333;
+}
+
+label {
+    display: block;
+    text-align: left;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+input[type="password"] {
+    width: 100%; /* O input ocupa toda a largura do contêiner */
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button {
+    width: 100%; /* O botão ocupa toda a largura */
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.error {
+    color: red;
+    margin-top: 10px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .login-container {
+        width: 95%; /* Ajusta o contêiner para telas menores */
+    }
+}
