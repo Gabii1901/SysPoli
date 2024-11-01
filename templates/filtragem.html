@@ -5,56 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SysPoli - Filtragem de Documentos</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/static/manifest.json">
 </head>
 <body>
+
     <div class="container">
         <h1>Filtragem de Documentos</h1>
+        
+        <!-- Formulário de filtragem -->
         <form method="POST">
-            <label for="data_inicial">Data Inicial:</label>
-            <input type="date" id="data_inicial" name="data_inicial" value="{{ data_inicial or default_data_inicial }}">
+            <!-- Campos de Data Inicial e Data Final, lado a lado -->
+            <div class="date-container">
+                <div>
+                    <label for="data_inicial">Data Inicial:</label>
+                    <input type="date" id="data_inicial" name="data_inicial" value="{{ data_inicial or default_data_inicial }}">
+                </div>
+                <div>
+                    <label for="data_final">Data Final:</label>
+                    <input type="date" id="data_final" name="data_final" value="{{ data_final or default_data_final }}">
+                </div>
+            </div>
 
-            <label for="data_final">Data Final:</label>
-            <input type="date" id="data_final" name="data_final" value="{{ data_final or default_data_final }}">
-
+            <!-- Campos adicionais de filtragem -->
             <label for="fornecedor">Fornecedor:</label>
             <input type="text" id="fornecedor" name="fornecedor" value="{{ fornecedor }}">
 
             <label for="cnpj">CNPJ/CPF:</label>
             <input type="text" id="cnpj" name="cnpj" value="{{ cnpj }}">
 
+            <label for="codigo_empresa">Código da Empresa:</label>
+            <input type="text" id="codigo_empresa" name="codigo_empresa" value="{{ codigo_empresa }}">
+
+            <label for="cnpj_empresa">CNPJ da Empresa:</label>
+            <input type="text" id="cnpj_empresa" name="cnpj_empresa" value="{{ cnpj_empresa }}">
+
             <button type="submit">Filtrar</button>
         </form>
 
+        <!-- Tabela de documentos filtrados -->
         <table>
             <thead>
                 <tr>
-                    <th class="coluna-data">Data Emissão</th>
-                    <th>Empresa</th> <!-- Nova Coluna Empresa -->
+                    <th>Data Emissão</th>
+                    <th>Código da Empresa</th>
+                    <th>CNPJ da Empresa</th>
                     <th>Código do Fornecedor</th>
-                    <th class="coluna-cnpj">CNPJ/CPF</th>
+                    <th>CNPJ/CPF</th>
                     <th>Fornecedor</th>
-                    <th>Número NF-E</th>
-                    <th>Chave NF-E</th>    
+                    <th>Número NF-e</th>
+                    <th>Status</th> 
+                    <th>Valor</th> 
+                    <th>Chave NF-e</th>   
                 </tr>
             </thead>
             <tbody>
-                {% for doc in documentos %}
+                {% for documento in documentos %}
                 <tr>
-                    <td class="coluna-data">
-                        {{ doc['DATAEMIS'].strftime('%d/%m/%Y') if doc['DATAEMIS'] else '' }}
-                    </td>
-                    <td>{{ doc['Empresa'] }}</td> <!-- Mostrando a empresa -->
-                    <td>{{ doc['CODFOR'] }}</td>
-                    <td class="coluna-cnpj">{{ doc['CNPJCPF'] }}</td>
-                    <td>{{ doc['NOME'] }}</td>
-                    <td>{{ doc['Numero_NFE'] }}</td>
-                    <td>{{ doc['CHAVE'] }}</td>     
+                    <td>{{ documento['DATAEMIS'].strftime('%d/%m/%Y') }}</td>
+                    <td>{{ documento['Codigo_Empresa'] }}</td>
+                    <td>{{ documento['CNPJ_Empresa'] }}</td>
+                    <td>{{ documento['CODFOR'] }}</td>
+                    <td>{{ documento['CNPJCPF'] }}</td>
+                    <td>{{ documento['NOME'] }}</td>
+                    <td>{{ documento['Numero_NFE'] }}</td>
+                    <td>{{ documento['Status'] }}</td> 
+                    <td>{{ "%.2f" | format(documento['VALOR']) }}</td>
+                    <td>{{ documento['CHAVE'] }}</td>    
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        <a href="{{ url_for('exportar_documentos') }}" class="btn-exportar">Exportar para Excel</a>
+        <!-- Botão para exportar os dados filtrados para Excel -->
+        <button onclick="baixarDocumento()">Exportar para Excel</button>
+
+        <script type="text/javascript">
+            function baixarDocumento() {
+                // Chama a função da API do pywebview para abrir a URL de exportação no navegador externo
+                window.pywebview.api.abrir_navegador_externo('/exportar');
+            }
+        </script>
     </div>
 </body>
 </html>
